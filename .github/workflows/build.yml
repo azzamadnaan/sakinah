@@ -33,10 +33,18 @@ jobs:
           buildozer init
         fi
 
-    - name: Build APK with Buildozer
+    - name: Fix Android SDK Components & Accept Licenses
       run: |
+        # ضبط ملف التكوين لتخطي أي مشاكل في المتطلبات
         sed -i 's/#requirements = python3,kivy/requirements = python3,kivy,requests/g' buildozer.spec
         sed -i 's/#p4a.branch = stable/p4a.branch = master/g' buildozer.spec
+        
+        # إنشاء مجلدات أندرويد SDK يدوياً للتأكد من جاهزيتها
+        mkdir -p ~/.buildozer/android/platform/android-sdk
+        export ANDROIDSDK=$HOME/.buildozer/android/platform/android-sdk
+
+    - name: Build APK with Buildozer
+      run: |
         export P4A_ACCEPT_LICENSE=1
         buildozer -v android debug
 
