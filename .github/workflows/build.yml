@@ -33,16 +33,32 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade buildozer cython==0.29.36 pexpect
 
-    - name: Create Clean Spec File
+    - name: Force Correct Spec File
       run: |
+        # حذف الملف القديم بالكامل وإنشاء ملف نظيف بالخصائص الصحيحة مباشرة
         rm -f buildozer.spec
-        buildozer init -n
-        
-        # كتابة إعدادات متوافقة ومستقرة مباشرة داخل الملف لتجنب مشاكل الرخص
-        echo "requirements = python3,kivy,requests" >> buildozer.spec
-        echo "android.api = 30" >> buildozer.spec
-        echo "android.min_api = 21" >> buildozer.spec
-        echo "android.sdk = 30" >> buildozer.spec
+        cat << 'EOF' > buildozer.spec
+        [app]
+        title = Sakinah
+        package.name = sakinah
+        package.domain = org.sakinah
+        source.dir = .
+        source.include_exts = py,png,jpg,kv,atlas
+        version = 1.0
+        requirements = python3,kivy,requests
+        orientation = portrait
+        osx.python_version = 3
+        osx.kivy_version = 1.9.1
+        fullscreen = 0
+        android.api = 28
+        android.min_api = 21
+        android.sdk = 28
+        android.ndk = 21e
+        android.accept_sdk_license = True
+        [buildozer]
+        log_level = 2
+        warn_on_root = 0
+        EOF
 
     - name: Build APK Clean
       run: |
