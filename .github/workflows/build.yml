@@ -1,4 +1,4 @@
-name: Build Pure Python APK
+name: Build APK with Briefcase
 
 on:
   push:
@@ -17,40 +17,33 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install System Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y zip unzip git python3-pip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+    - name: Set up Java JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
 
-    - name: Install Buildozer and Dependencies
+    - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install --upgrade buildozer cython==0.29.36
+        pip install briefcase
 
-    - name: Initialize Buildozer (if not exists)
+    - name: Create Briefcase Template (if not exists)
       run: |
-        if [ ! -f buildozer.spec ]; then
-          buildozer init
+        if [ ! -f pyproject.toml ]; then
+          briefcase new --template cookiecutter --no-input app_name="Sakinah" formal_name="Sakinah" bundle="com.sakinah.app" project_name="Sakinah" app_class="Sakinah" gui_framework="kivy"
         fi
 
-    - name: Fix Android SDK Components & Accept Licenses
+    - name: Build Android APK
       run: |
-        # ضبط ملف التكوين لتخطي أي مشاكل في المتطلبات
-        sed -i 's/#requirements = python3,kivy/requirements = python3,kivy,requests/g' buildozer.spec
-        sed -i 's/#p4a.branch = stable/p4a.branch = master/g' buildozer.spec
-        
-        # إنشاء مجلدات أندرويد SDK يدوياً للتأكد من جاهزيتها
-        mkdir -p ~/.buildozer/android/platform/android-sdk
-        export ANDROIDSDK=$HOME/.buildozer/android/platform/android-sdk
-
-    - name: Build APK with Buildozer
-      run: |
-        export P4A_ACCEPT_LICENSE=1
-        buildozer -v android debug
+        cd src
+        briefcase create android
+        briefcase build android
+        briefcase package android --no-sign
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Python-Android-APK
-        path: bin/*.apk
+        name: Sakinah-Android-APK
+        path: src/android/gradle/app/build/outputs/apk/debug/*.apk
         
