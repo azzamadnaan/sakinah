@@ -25,7 +25,7 @@ jobs:
 
     - name: Build APK using Flet
       run: |
-        flet pack main.py --name "Sakinah" --product "Sakinah" --org "com.sakinah.app"
+        flet pack main.py --name "Sakinah"
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
