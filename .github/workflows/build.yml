@@ -1,11 +1,12 @@
-name: Build Flutter APK
+name: Build Flutter Android & iOS
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  build:
+  # 1. مهمة بناء أندرويد APK (على سيرفر لينكس مجاني وريّس)
+  build-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +18,23 @@ jobs:
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: release-apk
+          name: android-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+  # 2. مهمة بناء آي أو إس IPA (على سيرفر ماك حصرياً لتوافر Xcode)
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+      - run: flutter pub get
+      # استخدام وضع --no-codesign في حال عدم توفر شهادة مطور أפל (Apple Developer Account) للتجربة البرمجية فقط
+      - run: flutter build ios --release --no-codesign
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-release-app
+          path: build/ios/iphoneos/Runner.app
           
