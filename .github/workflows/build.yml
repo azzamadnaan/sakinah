@@ -23,25 +23,31 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Install Buildozer & Dependencies
+    - name: Install System Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y zip unzip git openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+
+    - name: Install Buildozer & Dependencies
+      run: |
         python -m pip install --upgrade pip
         pip install --upgrade buildozer cython==0.29.36
 
-    - name: Build APK Clean
+    - name: Configure Buildozer and Fix SDK
       run: |
-        # إنشاء ملف التكوين الافتراضي تلقائياً إن لم يكن موجوداً
         if [ ! -f buildozer.spec ]; then
           buildozer init
         fi
+        # ضبط المتطلبات والإصدارات المستقرة لتجنب مشاكل الرخص
         sed -i 's/#requirements = python3,kivy/requirements = python3,kivy,requests/g' buildozer.spec
         sed -i 's/#p4a.branch = stable/p4a.branch = master/g' buildozer.spec
-        
-        # تنفيذ البناء مع قبول الرخص تلقائياً عبر متغير النظام لمنع الانهيار
+        sed -i 's/#android.api = 33/android.api = 31/g' buildozer.spec
+        sed -i 's/#android.min_api = 21/android.min_api = 21/g' buildozer.spec
+
+    - name: Build APK Clean
+      run: |
         export P4A_ACCEPT_LICENSE=1
-        buildozer -v android debug || buildozer -v android debug
+        buildozer -v android debug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
