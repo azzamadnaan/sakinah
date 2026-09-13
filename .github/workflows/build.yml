@@ -33,17 +33,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade buildozer cython==0.29.36 pexpect
 
-    - name: Generate Safe Buildozer Config
+    - name: Create Clean Spec File
       run: |
-        # حذف أي ملف سابق وتوليد ملف جديد نظيف
         rm -f buildozer.spec
         buildozer init -n
         
-        # تعديل المتطلبات والإصدارات لتعمل على SDK مستقر لا يطلب رخص معقدة
-        sed -i 's/requirements = python3,kivy/requirements = python3,kivy,requests/g' buildozer.spec
-        sed -i 's/p4a.branch = stable/p4a.branch = master/g' buildozer.spec
-        sed -i 's/android.api = 33/android.api = 30/g' buildozer.spec
-        sed -i 's/android.min_api = 21/android.min_api = 21/g' buildozer.spec
+        # كتابة إعدادات متوافقة ومستقرة مباشرة داخل الملف لتجنب مشاكل الرخص
+        echo "requirements = python3,kivy,requests" >> buildozer.spec
+        echo "android.api = 30" >> buildozer.spec
+        echo "android.min_api = 21" >> buildozer.spec
+        echo "android.sdk = 30" >> buildozer.spec
 
     - name: Build APK Clean
       run: |
@@ -55,5 +54,4 @@ jobs:
       with:
         name: Sakinah-App-APK
         path: bin/*.apk
-
-      
+        
