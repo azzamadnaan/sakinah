@@ -1,4 +1,4 @@
-name: Build APK with Briefcase
+name: Build Sakinah APK
 
 on:
   push:
@@ -23,27 +23,29 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Install Dependencies
+    - name: Install Buildozer & Dependencies
       run: |
+        sudo apt-get update
+        sudo apt-get install -y zip unzip git openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
         python -m pip install --upgrade pip
-        pip install briefcase
+        pip install --upgrade buildozer cython==0.29.36
 
-    - name: Create Briefcase Template (if not exists)
+    - name: Build APK Clean
       run: |
-        if [ ! -f pyproject.toml ]; then
-          briefcase new --template cookiecutter --no-input app_name="Sakinah" formal_name="Sakinah" bundle="com.sakinah.app" project_name="Sakinah" app_class="Sakinah" gui_framework="kivy"
+        # إنشاء ملف التكوين الافتراضي تلقائياً إن لم يكن موجوداً
+        if [ ! -f buildozer.spec ]; then
+          buildozer init
         fi
-
-    - name: Build Android APK
-      run: |
-        cd src
-        briefcase create android
-        briefcase build android
-        briefcase package android --no-sign
+        sed -i 's/#requirements = python3,kivy/requirements = python3,kivy,requests/g' buildozer.spec
+        sed -i 's/#p4a.branch = stable/p4a.branch = master/g' buildozer.spec
+        
+        # تنفيذ البناء مع قبول الرخص تلقائياً عبر متغير النظام لمنع الانهيار
+        export P4A_ACCEPT_LICENSE=1
+        buildozer -v android debug || buildozer -v android debug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Sakinah-Android-APK
-        path: src/android/gradle/app/build/outputs/apk/debug/*.apk
+        name: Sakinah-App-APK
+        path: bin/*.apk
         
