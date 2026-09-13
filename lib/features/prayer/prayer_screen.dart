@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:async'; // نحتاجها لتشغيل العداد الزمني (Timer)
+import 'dart:async';
+import '../../core/services/prayer_service.dart';
 
 class PrayerScreen extends StatefulWidget {
   const PrayerScreen({super.key});
@@ -9,27 +10,39 @@ class PrayerScreen extends StatefulWidget {
 }
 
 class _PrayerScreenState extends State<PrayerScreen> {
-  // بيانات وهمية مؤقتة (سيتم جلبها لاحقاً من PrayerService بناءً على موقع المستخدم)
-  final String _nextPrayerName = 'العصر';
-  Duration _timeLeft = const Duration(hours: 1, minutes: 24, seconds: 30);
+  List<PrayerDayModel> _monthSchedule = [];
+  bool _isLoading = true;
   Timer? _timer;
+  Duration _timeLeft = const Duration(hours: 1, minutes: 24, seconds: 30);
+  String _nextPrayerName = 'العصر';
 
   @override
   void initState() {
     super.initState();
+    _loadPrayerTimes();
     _startCountdown();
   }
 
-  // دالة تشغيل العداد التنازلي كل ثانية
+  // جلب المواقيت عبر الـ API والخدمة التي أنشأناها
+  Future<void> _loadPrayerTimes() async {
+    setState(() => _isLoading = true);
+    try {
+      final schedule = await PrayerService.fetchMonthPrayerTimesByLocation();
+      setState(() {
+        _monthSchedule = schedule;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
   void _startCountdown() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
           if (_timeLeft.inSeconds > 0) {
             _timeLeft = _timeLeft - const Duration(seconds: 1);
-          } else {
-            // هنا سيتم تحديث الصلاة القادمة عند انتهاء الوقت
-            timer.cancel();
           }
         });
       }
@@ -38,23 +51,21 @@ class _PrayerScreenState extends State<PrayerScreen> {
 
   @override
   void dispose() {
-    _timer?.cancel(); // إيقاف العداد عند الخروج من الشاشة لتوفير البطارية
+    _timer?.cancel();
     super.dispose();
   }
 
-  // دالة لتنسيق الوقت بشكل جميل (HH:MM:SS)
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String hours = twoDigits(duration.inHours);
-    String minutes = twoDigits(duration.inMinutes.remainder(60));
-    String seconds = twoDigits(duration.inSeconds.remainder(60));
-    return "$hours:$minutes:$seconds";
+    return "${twoDigits(duration.inHours)}:${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}";
   }
 
   @override
   Widget build(BuildContext context) {
+    // جلب أوقات اليوم الحالي من الجدول إذا كان متوفراً
+    PrayerDayModel? todayPrayer = _monthSchedule.isNotEmpty ? _monthSchedule.first : null;
+
     return Scaffold(
-      // نفس تدرج الألوان لتوحيد الهوية البصرية للتطبيق
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
@@ -65,21 +76,24 @@ class _PrayerScreenState extends State<PrayerScreen> {
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 20),
-              _buildCountdownHero(),
-              const SizedBox(height: 25),
-              Expanded(child: _buildPrayerList()),
-            ],
-          ),
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF0F766E)),
+                )
+              : Column(
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 20),
+                    _buildCountdownHero(),
+                    const SizedBox(height: 25),
+                    Expanded(child: _buildPrayerList(todayPrayer)),
+                  ],
+                ),
         ),
       ),
     );
   }
 
-  // 1. الترويسة
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -87,32 +101,30 @@ class _PrayerScreenState extends State<PrayerScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            'مواقيت الصلاة',
+            'مواقيت الصلاة (تحديد تلقائي)',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Color(0xFF0F766E),
             ),
           ),
-          // زر تحديد الموقع أو الإعدادات
           IconButton(
-            icon: const Icon(Icons.location_on_rounded, color: Color(0xFF0F766E), size: 28),
-            onPressed: () {},
-            tooltip: 'تحديث الموقع',
+            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF0F766E), size: 28),
+            onPressed: _loadPrayerTimes,
+            tooltip: 'تحديث المواقيت والموقع',
           ),
         ],
       ),
     );
   }
 
-  // 2. بطاقة العداد التنازلي الكبيرة (Hero Card)
   Widget _buildCountdownHero() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF0F766E), Color(0xFF14B8A6)], // تدرج أخضر مزرق أنيق
+          colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -133,12 +145,12 @@ class _PrayerScreenState extends State<PrayerScreen> {
           ),
           const SizedBox(height: 15),
           Text(
-            _formatDuration(_timeLeft), // عرض الوقت الحي
+            _formatDuration(_timeLeft),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 48,
               fontWeight: FontWeight.bold,
-              letterSpacing: 2, // مسافة بين الأرقام لتبدو كالساعة الرقمية
+              letterSpacing: 2,
             ),
           ),
         ],
@@ -146,31 +158,29 @@ class _PrayerScreenState extends State<PrayerScreen> {
     );
   }
 
-  // 3. قائمة مواقيت الصلاة لليوم
-  Widget _buildPrayerList() {
+  Widget _buildPrayerList(PrayerDayModel? today) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: ListView(
-        physics: const BouncingScrollPhysics(), // تأثير سحب مرن
+        physics: const BouncingScrollPhysics(),
         children: [
-          _buildPrayerTile(name: 'الفجر', time: '04:30 ص', icon: Icons.nights_stay),
-          _buildPrayerTile(name: 'الشروق', time: '05:50 ص', icon: Icons.wb_twilight),
-          _buildPrayerTile(name: 'الظهر', time: '12:00 م', icon: Icons.wb_sunny),
-          _buildPrayerTile(name: 'العصر', time: '03:15 م', icon: Icons.wb_sunny_outlined, isNext: true),
-          _buildPrayerTile(name: 'المغرب', time: '06:05 م', icon: Icons.brightness_3),
-          _buildPrayerTile(name: 'العشاء', time: '07:30 م', icon: Icons.star_border),
-          const SizedBox(height: 100), // مساحة سفلية لعدم تغطية الشريط السفلي
+          _buildPrayerTile(name: 'الفجر', time: today?.fajr ?? '--:--', icon: Icons.nights_stay),
+          _buildPrayerTile(name: 'الشروق', time: today?.sunrise ?? '--:--', icon: Icons.wb_twilight),
+          _buildPrayerTile(name: 'الظهر', time: today?.dhuhr ?? '--:--', icon: Icons.wb_sunny),
+          _buildPrayerTile(name: 'العصر', time: today?.asr ?? '--:--', icon: Icons.wb_sunny_outlined, isNext: true),
+          _buildPrayerTile(name: 'المغرب', time: today?.maghrib ?? '--:--', icon: Icons.brightness_3),
+          _buildPrayerTile(name: 'العشاء', time: today?.isha ?? '--:--', icon: Icons.star_border),
+          const SizedBox(height: 100),
         ],
       ),
     );
   }
 
-  // ويدجت مصغر لبناء كل صلاة في القائمة
   Widget _buildPrayerTile({
     required String name,
     required String time,
     required IconData icon,
-    bool isNext = false, // لتحديد ما إذا كانت هذه هي الصلاة القادمة لتمييزها
+    bool isNext = false,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
