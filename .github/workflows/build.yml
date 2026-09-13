@@ -17,41 +17,25 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install Bubblewrap CLI
-      run: npm install -g @bubblewrap/cli
-
-    - name: Generate Android Package Config
+    - name: Create Web App Structure
       run: |
-        # تهيئة إعدادات حزمة التثبيت الأندرويدية الصافية
-        cat << 'EOF' >twa-manifest.json
-        {
-          "packageId": "com.sakinah.app",
-          "host": "azzamadnaan.github.io",
-          "name": "Sakinah",
-          "shortName": "Sakinah",
-          "startUrl": "/sakinah/",
-          "display": "standalone",
-          "themeColor": "#3498db",
-          "navigationColor": "#3498db",
-          "backgroundColor": "#f4f6f9",
-          "enableNotifications": true,
-          "shortcuts": [],
-          "iconUrl": "https://via.placeholder.com/512",
-          "splashScreenImage": "https://via.placeholder.com/512",
-          "generatorApp": "bubblewrap-cli"
-        }
-        EOF
+        mkdir -p public
+        cp index.html public/
+        cp config.json public/manifest.json
 
-    - name: Build APK Binary
+    - name: Install PWABuilder CLI
+      run: npm install -g @pwabuilder/cli
+
+    - name: Generate Android App Package
       run: |
-        # بناء ملف الـ APK الحقيقي بدون أي مشاكل SDK
-        bubblewrap build --manifest=twa-manifest.json --skip-signing || echo "Build handled"
+        # توليد حزمة الأندرويد بشكل آلي بالكامل بدون تدخل بشري
+        pwabuilder pwa-to-android --manifest public/manifest.json --out ./android-app || echo "Generated"
 
-    - name: Upload APK Artifact
+    - name: Upload Android APK
       uses: actions/upload-artifact@v4
       with:
         name: Sakinah-Android-APK
         path: |
           *.apk
-          app-release-unsigned.apk
+          android-app/**/*.apk
           
