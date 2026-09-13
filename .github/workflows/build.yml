@@ -1,4 +1,4 @@
-name: Build Sakinah WebAPK
+name: Build Sakinah WebApp
 
 on:
   push:
@@ -22,15 +22,9 @@ jobs:
         chmod +x build.sh
         ./build.sh
 
-    - name: Build TWA / APK using Bubblewrap
-      run: |
-        npm install -g @bubblewrap/cli
-        # بناء خفيف جداً يعتمد على الويب في ثوانٍ معدودة
-        echo "جاري تجهيز حزمة التثبيت النهائية..."
-
-    - name: Upload Artifact placeholder
+    - name: Upload Web Package Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Sakinah-Web-Package
+        name: Sakinah-Complete-Package
         path: www/
         
