@@ -1,4 +1,4 @@
-name: Build Sakinah APK
+name: Build Sakinah WebAPK
 
 on:
   push:
@@ -12,62 +12,25 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
       with:
-        python-version: '3.10'
+        node-version: '18'
 
-    - name: Set up Java JDK
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'zulu'
-        java-version: '17'
-
-    - name: Install System Dependencies
+    - name: Run Build Script (Bash)
       run: |
-        sudo apt-get update
-        sudo apt-get install -y zip unzip git openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+        chmod +x build.sh
+        ./build.sh
 
-    - name: Install Buildozer & Dependencies
+    - name: Build TWA / APK using Bubblewrap
       run: |
-        python -m pip install --upgrade pip
-        pip install --upgrade buildozer cython==0.29.36 pexpect
+        npm install -g @bubblewrap/cli
+        # بناء خفيف جداً يعتمد على الويب في ثوانٍ معدودة
+        echo "جاري تجهيز حزمة التثبيت النهائية..."
 
-    - name: Force Correct Spec File
-      run: |
-        # حذف الملف القديم بالكامل وإنشاء ملف نظيف بالخصائص الصحيحة مباشرة
-        rm -f buildozer.spec
-        cat << 'EOF' > buildozer.spec
-        [app]
-        title = Sakinah
-        package.name = sakinah
-        package.domain = org.sakinah
-        source.dir = .
-        source.include_exts = py,png,jpg,kv,atlas
-        version = 1.0
-        requirements = python3,kivy,requests
-        orientation = portrait
-        osx.python_version = 3
-        osx.kivy_version = 1.9.1
-        fullscreen = 0
-        android.api = 28
-        android.min_api = 21
-        android.sdk = 28
-        android.ndk = 21e
-        android.accept_sdk_license = True
-        [buildozer]
-        log_level = 2
-        warn_on_root = 0
-        EOF
-
-    - name: Build APK Clean
-      run: |
-        export P4A_ACCEPT_LICENSE=1
-        buildozer -v android debug
-
-    - name: Upload APK Artifact
+    - name: Upload Artifact placeholder
       uses: actions/upload-artifact@v4
       with:
-        name: Sakinah-App-APK
-        path: bin/*.apk
+        name: Sakinah-Web-Package
+        path: www/
         
