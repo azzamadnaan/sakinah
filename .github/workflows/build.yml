@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable' # استخدام الإصدار المستقر الحديث لتجنب مشاكل الـ SDK
+          flutter-version: '3.24.0' # تحديد الإصدار صراحة لتجنب خطأ جلب القناة
           channel: 'stable'
       - run: flutter pub get
       - run: flutter build apk --release
@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable' # استخدام الإصدار المستقر الحديث
+          flutter-version: '3.24.0' # تحديد الإصدار صراحة
           channel: 'stable'
       - run: flutter pub get
       - run: flutter build ios --release --no-codesign
