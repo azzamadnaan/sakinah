@@ -5,14 +5,14 @@ on:
     branches: [ main ]
 
 jobs:
-  # 1. مهمة بناء أندرويد APK (على سيرفر لينكس مجاني وريّس)
+  # 1. بناء أندرويد APK
   build-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.x'
+          flutter-version: 'stable' # استخدام الإصدار المستقر الحديث لتجنب مشاكل الـ SDK
           channel: 'stable'
       - run: flutter pub get
       - run: flutter build apk --release
@@ -21,17 +21,16 @@ jobs:
           name: android-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
-  # 2. مهمة بناء آي أو إس IPA (على سيرفر ماك حصرياً لتوافر Xcode)
+  # 2. بناء آي أو إس (بوضع التجربة بدون شهادة مطور)
   build-ios:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.x'
+          flutter-version: 'stable' # استخدام الإصدار المستقر الحديث
           channel: 'stable'
       - run: flutter pub get
-      # استخدام وضع --no-codesign في حال عدم توفر شهادة مطور أפל (Apple Developer Account) للتجربة البرمجية فقط
       - run: flutter build ios --release --no-codesign
       - uses: actions/upload-artifact@v4
         with:
